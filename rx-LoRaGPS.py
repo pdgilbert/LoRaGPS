@@ -51,13 +51,16 @@ class LoRaGPSrx(LoRa):
         # dt is just to identify time gaps when testing
         if bt is not None:
            dt = 3600 * (tm[3] - self.last_tm[3]) + 60 * (tm[4] - self.last_tm[4]) + (tm[5] - self.last_tm[5])
-           print(rx + ' dt=%f s.' % dt)
-           print(bt + f'{lat:13.7f}' + f'{lon:13.7f}' + \
-                      f'{tm[0]:5.0f}' + '-' + f'{tm[1]:2.0f}' + '-' + f'{tm[2]:2.0f}' + \
-                      f'{tm[3]:2.0f}' + ':' + f'{tm[4]:2.0f}' + ':' + f'{tm[5]:2.0f}' + 'Z'\
-                       + ' dt=%f s.' % dt)
-
-      
+           #print(rx + ' dt=%f s.' % dt)
+           # f-strings starting in Python 3.6
+	   #print(bt + f'{lat:13.7f}' + f'{lon:13.7f}' + \
+           #           f'{tm[0]:5.0f}' + '-' + f'{tm[1]:2.0f}' + '-' + f'{tm[2]:2.0f}' + \
+           #           f'{tm[3]:2.0f}' + ':' + f'{tm[4]:2.0f}' + ':' + f'{tm[5]:2.0f}' + 'Z'\
+           #            + ' dt=%f s.' % dt)
+           print('%s %f %f %i-%i-%i %i:%i:%rZ  dt=%r s' % 
+              (bt, lat, lon, tm[0], tm[1], tm[2], tm[3], tm[4], tm[5],  dt))
+        
+              
         self.last_tm = tm                 # really need this for each bt
         #print( [ord(ch) for ch in payload])
         #print(chr(payload[0]))
