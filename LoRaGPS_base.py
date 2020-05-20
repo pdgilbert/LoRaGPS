@@ -28,6 +28,9 @@ BOARD.setup()
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 #parser = LoRaArgumentParser("Continous LoRa receiver.")
 
+#316	Canada
+#338	United States of America
+mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}
 
 class LoRaGPSrx(LoRa):
     '''
@@ -75,7 +78,7 @@ class LoRaGPSrx(LoRa):
               (bt, lat, lon, tm[0], tm[1], tm[2], tm[3], tm[4], tm[5],  dt))
            
            ais = AIS1_encode(
-              mmsi=123456789, navStat=0, ROT=128, SOG=1023, PosAcc=0, 
+              mmsi=mmsis[bt], navStat=0, ROT=128, SOG=1023, PosAcc=0, 
               lon= lon, lat= lat, COG=360, HDG=511, tm=int(tm[5]), mvInd=0,  
               spare=0, RAIM=False, RadStat=0, returnk=False)
        
