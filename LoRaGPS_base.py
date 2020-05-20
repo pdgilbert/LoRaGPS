@@ -1,12 +1,24 @@
 #!/usr/bin/env python3
 
-""" Receive GPS locations via LoRa. """
+"""
+Receive GPS locations via LoRa, convert to AIS and multicast on network(UDP)
 
-# See examples in  pySX127x.
+"""
+
+# See also examples in  pySX127x.
 
 from time import sleep
 from SX127x.LoRa import *
 from SX127x.board_config import BOARD
+
+from AIS import AIS1_encode
+
+import socket
+
+MCAST_GROUP = '224.1.1.4'
+PORT  = 65433
+
+TTL = 20
 
 quiet=False
 
@@ -31,9 +43,11 @@ class LoRaGPSrx(LoRa):
         self.last_tm = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     
     def on_rx_done(self):
+        # on interupt read LoRa payload
         self.clear_irq_flags(RxDone=1)
-        payload = self.read_payload(nocheck=True)
+        payload = self.read_payload(nocheck=True)        
         rx = bytes(payload).decode("utf-8",'ignore')
+
         try:
            p   = rx.split(' ')
            bt  = p[0]
@@ -59,8 +73,15 @@ class LoRaGPSrx(LoRa):
            #            + ' dt=%f s.' % dt)
            print('%s %f %f %i-%i-%i %i:%i:%rZ  dt=%r s' % 
               (bt, lat, lon, tm[0], tm[1], tm[2], tm[3], tm[4], tm[5],  dt))
-        
-              
+           
+           ais = AIS1_encode(
+              mmsi=123456789, navStat=0, ROT=128, SOG=1023, PosAcc=0, 
+              lon= lon, lat= lat, COG=360, HDG=511, tm=int(tm[5]), mvInd=0,  
+              spare=0, RAIM=False, RadStat=0, returnk=False)
+       
+           
+           sock.sendto(ais.encode(), (MCAST_GROUP, PORT))
+   
         self.last_tm = tm                 # really need this for each bt
         #print( [ord(ch) for ch in payload])
         #print(chr(payload[0]))
@@ -136,6 +157,10 @@ if not quiet :  print(lora)
 assert(lora.get_agc_auto_on() == 1)
 assert(lora.get_freq() == 915)
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
+print('network (UDP) multicast group to %s:%i' % (MCAST_GROUP, PORT))
+
 try:
     lora.start()
 except KeyboardInterrupt:
@@ -146,6 +171,7 @@ except KeyboardInterrupt:
 finally:
     lora.set_mode(MODE.SLEEP)
     BOARD.teardown()
+    sock.close()
     if not quiet :
         sys.stdout.flush()
         sys.stderr.write("Shut down.\n")

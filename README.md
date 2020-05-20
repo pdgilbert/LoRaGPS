@@ -2,12 +2,12 @@
 Transmit GPS and other information with LoRa
 
 ##  Contents
-- [Status Summary](#status-summary)
+- [Summary and Status](#summary-and-status)
 - [Hardware Setup Notes](#hardware-setup-notes)
-- [sensor system](#[sensor-system)
-- [base station](#[base-station)
+- [sensor system](#sensor-system)
+- [base station](#base-station)
 
-##  Status Summary
+##  Summary and Status
 
 The code is in an initial development stage, pre-alpha. More information will
 eventually appear here. For the time being the following content is a rough
@@ -16,40 +16,46 @@ different pieces.
 
 The LoRa `tx` and `rx` use `SX127x` from `pySX127x`.
 
-`tx-LoRaGPS.py` -  transmit message over LoRa (not LoRaWAN).
-                Status: working (on Raspberry Pi Zero W) but in active
+`LoRaGPS_sensor.py` -  transmit message over LoRa (not LoRaWAN).
+                       Status: working (on Raspberry Pi Zero W) but in active
                         development and re-org.
 
-`rx-LoRaGPS.py` -  receive message over LoRa.
-                Status: working (on Raspberry Pi 3Bv1.2) but in active
+`LoRaGPS_base.py` -  receive message over LoRa.
+                     Status: working (on Raspberry Pi 3Bv1.2) but in active
                         development and re-org.
 
 `lib/AIS.py`    -  Not real AIS! Utilities for converting LoRa broadcast of GPS   
                 information into AIS messages to feed into OpenCPN. 
                 Status: working but possible precision problem with lon and lat.
 
-`ais-fake-tx.py` - Wait for a TCP connection then read lines from ais-fake.txt and
-                write them to HOST/PORT. For testing sending of data to OpenCPN.
-                Status: working but could be threaded.
+`ais-fake-tx-udp.py` - For testing sending of data to OpenCPN. 
+                       Establish UDP multicast group and send some (AIS) messages
+                       on thet IFACE/PORT. Status: working.
 
-`ais-fake-rx.py` - For testing ais-fake-tx.py.
-                Status: working.
+`ais-fake-rx-udp.py` - For testing UDP multicast from ais-fake-tx-udp.py and
+                       LoRaGPS_base.py. Wait for UDP  multicasts and print them .
+                       Status: working.
+
+`ais-fake-tx.py`     - Wait for a TCP connection then read lines from ais-fake.txt and 
+                       write them to HOST/PORT. For testing sending of data to OpenCPN.
+                       Status: working but superceded by UDP version.
+
+`ais-fake-rx.py`     - For testing TCP connection in ais-fake-tx.py.
+                       Status: workingbut superceded by UDP version.
 
 `ais-fake.txt`   - Text file with sample AIS data for ais-fake-tx.py testing.
 
 
-The unit testing for AIS.py is run by   python3 lib/AIS.py
+The unit testing for `AIS.py` is run by   `python3 lib/AIS.py`
  
-Some notes on installing on Raspberry Pi are in ...
-
 The receiver is run on a Raspberry Pi with LoRa hardware by
 ```
-   python3 rx-LoRaGPS.py 
+   python3 LoRaGPS_base.py 
 ```
 
 The transmitter is run on a Raspberry Pi with LoRa and GPS hardware by
 ```
- python3 tx-LoRaGPS.py
+ python3 LoRaGPS_sensor.py
 ```
 
 ##  Hardware Setup Notes
@@ -143,7 +149,7 @@ possibly it will be necessary to
   sudo apt upgrade
 ```
   
-and probably it will necessary to reboot occasionally above and in the next.
+and probably it will be necessary to reboot occasionally above and in the next.
  
 Raspberry Pi uses the UART as a serial console, which needs to be turned off
 to use the UART for GPS. As root on the Raspberry Pi:
@@ -177,7 +183,7 @@ It should be possible to comfirm that the GPS is attached and working by
 The last line should show a string of NMEA data, read from the GPS 
 device on the serial port.
 
-The `tx-LoRaGPS.py` code now reads GPS directly though the serial USART.
+The `LoRaGPS_sensor.py` code now reads GPS directly though the serial USART.
 An early version used gpsd, which may be more robust with different GPS
 devices, and provides some other useful features. It can be a bit trickier 
 to set up, but is very stable once working. The main reason for not using
@@ -229,9 +235,9 @@ if gpsd is installed, it may be necessary to do
   sudo systemctl disable  gpsd
 ```
 
-Install tx-LoRaGPS.py and run it
+Install LoRaGPS_sensor.py and run it
 ```
-  python3 tx-LoRaGPS.py
+  python3 LoRaGPS_sensor.py
 ```
 
 
@@ -263,14 +269,36 @@ The essential additional points are that it needs Python 3, python3-dev, and pyt
 
 Depending on the install location put something like
 ```
-   export PYTHONPATH=/home/pi/pySX127x/
+   export PYTHONPATH=/home/pi/pySX127x/:/home/pi/LoRaGPS/lib
 ```
 in .bashrc
 
-Install rx-LoRaGPS.py and run it
+Install LoRaGPS_base.py and run it
 ```
-  python3 rx-LoRaGPS.py
+  python3 LoRaGPS_base.py
 ```
 
+It might be possible to run OpenCPN on the base station, in which case the AIS feed from
+`LoRaGPS_base.py` can go to the localhost with ni special configuration. (If the base station
+is a Raspberry Pi, that may involve building OpenCPN rather than just installing it.)
+Otherwise the `LoRaGPS_base.py` will need to broadcast from a network port on the base station
+so that other computers can use the AIS feed. On a Raspberry Pi that may require setting up
+iptables to allow the python code to open the port. See the 'Install a firewall' section of
+https://www.raspberrypi.org/documentation/configuration/security.md. 
+```
+sudo apt install ufw
+sudo ufw allow 22/tcp      # for ssh if running headless
+sudo ufw allow 65433/udp   # The default port used by LoRaGPS_base.py
+sudo ufw status
+sudo ufw enable             # legacy command may not be needed?
+sudo systemctl start ufw    # starts the service 
+sudo systemctl enable ufw   # starts the service on boot
+sudo systemctl status ufw
+cat /etc/ufw/ufw.conf
+sudo ufw logging medium
+sudo ufw show listening
+```
 
+The whole document is good reading if the base station is to be connected to the Internet 
+or publicly accessible. Other ufw commands
 
