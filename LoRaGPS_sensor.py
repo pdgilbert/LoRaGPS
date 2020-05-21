@@ -40,7 +40,7 @@ global lat, lon, tm, date
 
 quiet=False
 
-ReportInterval = 1.0  # seconds
+ReportInterval = 15.0  # 1.0  seconds
 
 hn = gethostname()
 

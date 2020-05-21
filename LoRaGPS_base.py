@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """
-Receive GPS locations via LoRa, convert to AIS and multicast on network(UDP)
+Receive GPS locations via LoRa, convert to AIS and multicast on network(UDP).
+Record tracks if set. (Beware space requirement.)
 
 """
 
@@ -13,6 +14,7 @@ from SX127x.board_config import BOARD
 
 from AIS import AIS1_encode
 
+import os
 import socket
 
 MCAST_GROUP = '224.1.1.4'
@@ -28,9 +30,23 @@ BOARD.setup()
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 #parser = LoRaArgumentParser("Continous LoRa receiver.")
 
-#316	Canada
-#338	United States of America
-mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}
+mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}   #316 is Canada; 338 is USA
+
+# see https://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
+# eventually
+#with open('MMSIs_table.json', 'r') as f:  mmsis = json.load(f)
+#bt   = mmsis["BT_ID"] 
+#mmsi = mmsis["cmmsi"] 
+#ct = mmsis["country"] 
+
+#track = ['BT-1', 'mqtt1']
+track = ['BT-1']
+
+if not os.path.exists('TRACKS') :  os.makedirs('TRACKS')
+
+track_file_handles = {}
+for b in track:
+   track_file_handles.update({b : open('TRACKS/' + b + '.txt', 'w')})
 
 class LoRaGPSrx(LoRa):
     '''
@@ -74,14 +90,19 @@ class LoRaGPSrx(LoRa):
            #           f'{tm[0]:5.0f}' + '-' + f'{tm[1]:2.0f}' + '-' + f'{tm[2]:2.0f}' + \
            #           f'{tm[3]:2.0f}' + ':' + f'{tm[4]:2.0f}' + ':' + f'{tm[5]:2.0f}' + 'Z'\
            #            + ' dt=%f s.' % dt)
-           print('%s %f %f %i-%i-%i %i:%i:%rZ  dt=%r s' % 
-              (bt, lat, lon, tm[0], tm[1], tm[2], tm[3], tm[4], tm[5],  dt))
+           
+           record = '%s %f %f %i-%i-%i %i:%i:%rZ  dt=%r s' % \
+              (bt, lat, lon, tm[0], tm[1], tm[2], tm[3], tm[4], tm[5],  dt)
+           
+           if not self.quiet : print(record)
+           
+           if bt in track : ok = track_file_handles[bt].write(record + "\n")
            
            ais = AIS1_encode(
               mmsi=mmsis[bt], navStat=0, ROT=128, SOG=1023, PosAcc=0, 
               lon= lon, lat= lat, COG=360, HDG=511, tm=int(tm[5]), mvInd=0,  
               spare=0, RAIM=False, RadStat=0, returnk=False)
-       
+           
            
            sock.sendto(ais.encode(), (MCAST_GROUP, PORT))
    
@@ -175,6 +196,8 @@ finally:
     lora.set_mode(MODE.SLEEP)
     BOARD.teardown()
     sock.close()
+    for f in track_file_handles.values():
+        f.close()
     if not quiet :
         sys.stdout.flush()
         sys.stderr.write("Shut down.\n")

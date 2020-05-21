@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+'''
+Read track a recording as written by LoRaGPS_base.py and convert it to
+a gpx file for import into OpenCPN.
+In OpenCPN  'Route & Mark Manager' in top right dropdown menu, 
+then in Tracks tab click Import GPX at bottom left.
+'''
+
+import sys
+
+usage = 'usage: \n\
+   track2gpx   infile.txt outfile.gpx\n\
+where infile.txt is the input track file as written by  LoRaGPS_base.py \n\
+and outfile.gpx is written with the gpx format that can be read by OpenCPN.\n\
+'
+
+if 3 != len(sys.argv) :
+   print(usage)
+   raise RuntimeError('wrong number of arguments.')
+
+infile  = sys.argv[1]
+outfile = sys.argv[2]
+
+with open(outfile,"w") as out:
+   out.write('<?xml version="1.0"?>\n')
+   out.write('<gpx version="1.1" creator="OpenCPN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" xmlns:opencpn="http://www.opencpn.org">\n')
+   out.write('  <trk>\n')
+   out.write('    <extensions>\n')
+   out.write('      <opencpn:guid>3a4c13dc-61a7-4d69-8671-c3657d8b5066</opencpn:guid>\n') 
+   out.write('      <opencpn:viz>1</opencpn:viz>\n')
+   out.write('    </extensions>\n')
+   out.write('    <trkseg>\n')
+
+   with open(infile,"r") as f:
+      for ln in f:
+         #BT-1 45.395798 -75.676875 2020-5-20 23:18:59.0Z  dt=13.0 s
+         p   = ln.split(' ')
+         bt  = p[0]
+         lat = p[1]
+         lon = p[2]
+         dt  = p[3]
+         tm  = p[4]
+         out.write('	  <trkpt lat="' + lat + '" lon="' + lon + '">\n')
+         out.write('	     <time>' + dt + 'T' + tm + '</time>\n')
+         out.write('	  </trkpt>\n')	     
+
+   out.write('    </trkseg>\n')
+   out.write('  </trk>\n')
+   out.write('</gpx>\n')
