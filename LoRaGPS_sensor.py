@@ -5,15 +5,18 @@ Read GPS using serial (not gpsd) and send GPS location via LoRa.
 This needs gpsd NOT running (it blocks serial). 
    sudo systemctl stop  gpsd
    sudo systemctl disable  gpsd
+
+Will need to detach from shell if the sensor system is going out of wifi range:
+   nohup  [python3]  LoRaGPS_sensor.py --quiet=True  report=15.0 &
 '''
 # see
 #  https://www.gpsinformation.org/dale/nmea.htm for NMEA sentence info.
 #  https://www.u-blox.com/sites/default/files/products/documents/u-blox6_ReceiverDescrProtSpec_%28GPS.G6-SW-10018%29_Public.pdf
 #    for ublox 6 details including controls
 
-
 # See examples in  pySX127x  for more LoRa info.
 
+import argparse
 import sys
 from socket import gethostname
 from time import sleep, strftime
@@ -38,9 +41,16 @@ logging.info('message level info.')
 
 global lat, lon, tm, date
 
-quiet=False
+parser = argparse.ArgumentParser(description= 
+           'Read GPS using serial (not gpsd) and send GPS location via LoRa.')
 
-ReportInterval = 15.0  # 1.0  seconds
+parser.add_argument('--quiet', type=bool, default=False,
+                    help='if True suppress local printing. (default: False)')
+
+parser.add_argument('--report', type=float, default=15.0,
+                    help='Reporting interval in seconds. (default: 15.0)')
+
+args = parser.parse_args()
 
 hn = gethostname()
 
@@ -147,15 +157,17 @@ class serialGPS(threading.Thread):
 
 class LoRaGPStx(LoRa):
     '''
+    ReportInterval      in seconds controls how often the location report is sent.
+    quiet   True/False  is used to turn off/on local printing.
     verbose True/False  is used by pySX127x to print extra information (mode setting).
-    quiet   True/False  is used in class  LoRaGPSrx to turn off/on printing.
     '''
     
-    def __init__(self, verbose=False, quiet=False):
+    def __init__(self, ReportInterval=1.0, quiet=False, verbose=False):
         super(LoRaGPStx, self).__init__(verbose)
+        self.ReportInterval=ReportInterval
+        self.quiet=quiet
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([1,0,0,0,0,0])
-        self.quiet=quiet
         self.set_freq(915)
         
         #  Medium Range  Defaults after init are 434.0MHz, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on 13 dBm
@@ -191,17 +203,18 @@ class LoRaGPStx(LoRa):
         global lat, lon, tm, date
         self.set_mode(MODE.STDBY)
         self.clear_irq_flags(TxDone=1)
-        sys.stdout.flush()
-        #if not self.quiet : sys.stdout.write(".")
-        sleep(ReportInterval)
+        sleep(self.ReportInterval)
         
         #p = gpsd.get_current()
         #except: return(None)
         #x = hn + ' ' + str(p.lat) + ' ' + str(p.lon )+ ' ' + str(p.time)
         
         x = hn + ' ' + str(lat) + ' ' + str(lon)  + ' ' + str(date) + 'T' + str(tm)
-        if not self.quiet : print(x)
-        #print([ord(ch) for ch in x])
+        if not self.quiet :
+           #sys.stdout.flush()
+           #if not self.quiet : sys.stdout.write(".")
+           print(x)
+           #print([ord(ch) for ch in x])
         self.write_payload([ord(ch) for ch in x])
         self.set_mode(MODE.TX)
     
@@ -227,7 +240,7 @@ class LoRaGPStx(LoRa):
     
     def start(self):
         #global args
-        sys.stdout.write("\rstart")
+        if not self.quiet : sys.stdout.write("\rstart")
         x='Started transmit from ' + hn + '.'
         #print( [ord(ch) for ch in x])
         self.write_payload([ord(ch) for ch in x])
@@ -245,15 +258,15 @@ if __name__ == '__main__':
    logging.info('main thread starting. ' + strftime('%Y-%m-%d %H:%M:%S %Z'))
 
    logging.info('setting LoRa.' )
-   lora = LoRaGPStx(verbose=False)
-      
-   if not quiet : print(lora)
+   lora = LoRaGPStx(ReportInterval=args.report, quiet=args.quiet, verbose=False)
+
+   if not args.quiet : print(lora)
    
    #assert(lora.get_lna()['lna_gain'] == GAIN.NOT_USED)
    assert(lora.get_agc_auto_on() == 1)
    assert(lora.get_freq() == 915)
 
-   if not quiet : print("Report interval %f s" % ReportInterval)
+   if not args.quiet : print("Report interval %f s" % args.report)
   
    shutdown = threading.Event()
 
@@ -263,7 +276,7 @@ if __name__ == '__main__':
    logging.debug(threading.enumerate())
  
    def shutdownHandler(signum, frame):
-       if not quiet : sys.stderr.write("Interrupt. Shutting down.\n")
+       if not args.quiet : sys.stderr.write("Interrupt. Shutting down.\n")
        logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
        sleep(2)
@@ -272,7 +285,7 @@ if __name__ == '__main__':
        logging.debug(threading.enumerate())
        lora.set_mode(MODE.SLEEP)
        BOARD.teardown()
-       if not quiet :
+       if not args.quiet :
           sys.stdout.flush()
           #print(lora)
           #sys.stdout.flush()

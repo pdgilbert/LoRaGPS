@@ -43,8 +43,9 @@ The LoRa `tx` and `rx` use `SX127x` from `pySX127x`.
 `ais-fake-rx.py`     - For testing TCP connection in ais-fake-tx.py.
                        Status: workingbut superceded by UDP version.
 
-`ais-fake.txt`   - Text file with sample AIS data for ais-fake-tx.py testing.
+`ais-fake.txt`       - Text file with sample AIS data for ais-fake-tx.py testing.
 
+`track2gpx`          - Utility to convert recorded tracks to gpx format.
 
 The unit testing for `AIS.py` is run by   `python3 lib/AIS.py`
  
@@ -55,7 +56,15 @@ The receiver is run on a Raspberry Pi with LoRa hardware by
 
 The transmitter is run on a Raspberry Pi with LoRa and GPS hardware by
 ```
- python3 LoRaGPS_sensor.py
+  python3 LoRaGPS_sensor.py
+
+or, if the file has execute permission 
+  LoRaGPS_sensor.py 
+
+or, if the sensor is to move in a way the shell will disconect, try 
+  nohup  python3  LoRaGPS_sensor.py --quiet=True  --report=15.0 &
+and note the pid to stop it with
+  kill pid 
 ```
 
 ##  Hardware Setup Notes
