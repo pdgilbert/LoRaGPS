@@ -23,8 +23,9 @@ outfile = sys.argv[2]
 
 with open(outfile,"w") as out:
    out.write('<?xml version="1.0"?>\n')
-   out.write('<gpx version="1.1" creator="OpenCPN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" xmlns:opencpn="http://www.opencpn.org">\n')
+   out.write('<gpx version="1.1" creator="track2gpx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" xmlns:opencpn="http://www.opencpn.org">\n')
    out.write('  <trk>\n')
+   out.write('    <name>' + infile.split('.')[0] + '</name>\n')
    out.write('    <extensions>\n')
    out.write('      <opencpn:guid>3a4c13dc-61a7-4d69-8671-c3657d8b5066</opencpn:guid>\n') 
    out.write('      <opencpn:viz>1</opencpn:viz>\n')
@@ -40,9 +41,9 @@ with open(outfile,"w") as out:
          lon = p[2]
          dt  = p[3]
          tm  = p[4]
-         out.write('	  <trkpt lat="' + lat + '" lon="' + lon + '">\n')
-         out.write('	     <time>' + dt + 'T' + tm + '</time>\n')
-         out.write('	  </trkpt>\n')	     
+         out.write('	  <trkpt lat="' + lat + '" lon="' + lon + '">')
+         out.write('<time>' + dt + 'T' + tm + '</time>')
+         out.write('</trkpt>\n')	     
 
    out.write('    </trkseg>\n')
    out.write('  </trk>\n')
