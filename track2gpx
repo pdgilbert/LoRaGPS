@@ -4,6 +4,8 @@ Read track a recording as written by LoRaGPS_base.py and convert it to
 a gpx file for import into OpenCPN.
 In OpenCPN  'Route & Mark Manager' in top right dropdown menu, 
 then in Tracks tab click Import GPX at bottom left.
+
+For details on the GPX standard see https://www.topografix.com/gpx.asp
 '''
 
 import sys
@@ -39,8 +41,19 @@ with open(outfile,"w") as out:
          bt  = p[0]
          lat = p[1]
          lon = p[2]
-         dt  = p[3]
-         tm  = p[4]
+	 # note that '-5-' works for OpenCPC but needs to be '-05-' in GPXsee
+         #dt  = p[3]
+         dt  = p[3].split('-')
+         dt[1] = ('0' + dt[1])[-2:]
+         dt[2] = ('0' + dt[2])[-2:]
+         dt  = '-'.join(dt)
+	 # and  ':0.0Z'  needs to be ':00.0Z'
+         #tm  = p[4]
+         tm  = p[4].split(':')
+         s = tm[2].split('.')
+         s[0] = ('0' + s[0])[-2:]
+         tm[2] = '.'.join(s)
+         tm = ':'.join(tm)
          out.write('	  <trkpt lat="' + lat + '" lon="' + lon + '">')
          out.write('<time>' + dt + 'T' + tm + '</time>')
          out.write('</trkpt>\n')	     

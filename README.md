@@ -57,13 +57,21 @@ The receiver is run on a Raspberry Pi with LoRa hardware by
 The transmitter is run on a Raspberry Pi with LoRa and GPS hardware by
 ```
   python3 LoRaGPS_sensor.py
+```
 
 or, if the file has execute permission 
+```
   LoRaGPS_sensor.py 
+```
 
-or, if the sensor is to move in a way the shell will disconect, try 
+or, if the sensor system is to move in a way that the shell will disconect, for example,
+if the seesion starting  `LoRaGPS_sensor.py` is by ssh over wifi and the sensor system
+will be move out of wifi range, then try starting with `nohup`:
+```
   nohup  python3  LoRaGPS_sensor.py --quiet=True  --report=15.0 &
+```
 and note the pid to stop it with
+```
   kill pid 
 ```
 
@@ -288,12 +296,13 @@ Install LoRaGPS_base.py and run it
 ```
 
 It might be possible to run OpenCPN on the base station, in which case the AIS feed from
-`LoRaGPS_base.py` can go to the localhost with ni special configuration. (If the base station
+`LoRaGPS_base.py` can go to localhost with no special configuration. (If the base station
 is a Raspberry Pi, that may involve building OpenCPN rather than just installing it.)
 Otherwise the `LoRaGPS_base.py` will need to broadcast from a network port on the base station
 so that other computers can use the AIS feed. On a Raspberry Pi that may require setting up
 iptables to allow the python code to open the port. See the 'Install a firewall' section of
-https://www.raspberrypi.org/documentation/configuration/security.md. 
+https://www.raspberrypi.org/documentation/configuration/security.md. The whole document is good reading if the base station is to be connected to the Internet 
+or publicly accessible.
 ```
 sudo apt install ufw
 sudo ufw allow 22/tcp      # for ssh if running headless
@@ -308,6 +317,5 @@ sudo ufw logging medium
 sudo ufw show listening
 ```
 
-The whole document is good reading if the base station is to be connected to the Internet 
-or publicly accessible. Other ufw commands
+
 
