@@ -162,8 +162,9 @@ class LoRaGPStx(LoRa):
     verbose True/False  is used by pySX127x to print extra information (mode setting).
     '''
     
-    def __init__(self, ReportInterval=1.0, quiet=False, verbose=False):
-        super(LoRaGPStx, self).__init__(verbose)
+    def __init__(self, ReportInterval=1.0, quiet=False,
+           verbose=False, do_calibration=True, calibration_freq=915):
+        super(LoRaGPStx, self).__init__(verbose, do_calibration, calibration_freq)
         self.ReportInterval=ReportInterval
         self.quiet=quiet
         self.set_mode(MODE.SLEEP)

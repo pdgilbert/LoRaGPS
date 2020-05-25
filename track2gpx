@@ -47,9 +47,11 @@ with open(outfile,"w") as out:
          dt[1] = ('0' + dt[1])[-2:]
          dt[2] = ('0' + dt[2])[-2:]
          dt  = '-'.join(dt)
-	 # and  ':0.0Z'  needs to be ':00.0Z'
+	 # and  '1:0:0.0Z'  needs to be '01:00:00.0Z'
          #tm  = p[4]
          tm  = p[4].split(':')
+         tm[0] = ('0' + tm[0])[-2:]
+         tm[1] = ('0' + tm[1])[-2:]
          s = tm[2].split('.')
          s[0] = ('0' + s[0])[-2:]
          tm[2] = '.'.join(s)
