@@ -75,6 +75,20 @@ and note the pid to stop it with
   kill pid 
 ```
 
+##  LoRa Software Notes
+
+Both `LoRaGPS_sensor.py` and ` LoRaGPS_base.py`  take command line arguments to set the
+frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argument for
+more details. There are trade offs amoung competing objectives: distance, date rate, 
+data reliabilty, channel congestion. These are affected by the various settings.
+The best is  difficult determined and will depend on the application. 
+For more information, see for example:
+
+https://docs.exploratory.engineering/lora/dr_sf/
+https://mylorawan.blogspot.com/2016/05/spread-factor-vs-payload-size-on-lora.html
+https://medium.com/home-wireless/testing-lora-radios-with-the-limesdr-mini-part-2-37fa481217ff
+
+
 ##  Hardware Setup Notes
 
 Below is a description of the setup as initially being tested. 
@@ -101,7 +115,7 @@ a network connection.
 In development and for installation both systems will need a monitor or
 network access with ssh.
 
-###  sensor system
+###  sensor system 
 
 As of May 2020 the sensor system is a Raspberry Pi Zero W running
 Raspian 10 (Buster Lite). 
@@ -142,7 +156,8 @@ running.
 Follow the normal instructions to download and burn an SD with Raspian.
 Set up sshd if you want to run headless. 
 
-The essential additional points are that it needs Python 3, python3-dev, and python modules RPi.GPIO, spidev, Pyserial and pySX127x:
+The essential additional points are that it needs Python 3, python3-dev, and 
+python modules RPi.GPIO, spidev, Pyserial and pySX127x:
 
 ```
   sudo apt install python3-dev python3-pip
@@ -274,7 +289,8 @@ check the settings in the code before running.
 Follow the normal instructions to download and burn an SD with Raspian.
 Set up sshd if you want to run headless. 
 
-The essential additional points are that it needs Python 3, python3-dev, and python modules RPi.GPIO,  spidev, and pySX127x:
+The essential additional points are that it needs Python 3, python3-dev, and python 
+modules RPi.GPIO,  spidev, and pySX127x:
 ```
   sudo apt install python3-dev python3-pip
   pip3 install RPi.GPIO   
@@ -301,7 +317,8 @@ is a Raspberry Pi, that may involve building OpenCPN rather than just installing
 Otherwise the `LoRaGPS_base.py` will need to broadcast from a network port on the base station
 so that other computers can use the AIS feed. On a Raspberry Pi that may require setting up
 iptables to allow the python code to open the port. See the 'Install a firewall' section of
-https://www.raspberrypi.org/documentation/configuration/security.md. The whole document is good reading if the base station is to be connected to the Internet 
+https://www.raspberrypi.org/documentation/configuration/security.md. 
+The whole document is good reading if the base station is to be connected to the Internet 
 or publicly accessible.
 ```
 sudo apt install ufw
