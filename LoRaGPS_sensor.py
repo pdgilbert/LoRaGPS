@@ -44,11 +44,26 @@ global lat, lon, tm, date
 parser = argparse.ArgumentParser(description= 
            'Read GPS using serial (not gpsd) and send GPS location via LoRa.')
 
+parser.add_argument('--report', type=float, default=15.0,
+                    help='Reporting interval in seconds. (default: 15.0)')
+
 parser.add_argument('--quiet', type=bool, default=False,
                     help='if True suppress local printing. (default: False)')
 
-parser.add_argument('--report', type=float, default=15.0,
-                    help='Reporting interval in seconds. (default: 15.0)')
+# following are settings passed to LoRa
+
+parser.add_argument('--freq', type=int, default=915,
+          help='LoRa frequency. 169, 315, 433, 868, 915 Mhz. (default: 915)')
+
+parser.add_argument('--bw', type=int, default=125,
+          help='LoRa frequency. 0-9 or 125kHz, 250kHz and 500kHz Mhz. (default: )')
+
+parser.add_argument('--Cr', type=str, default='4_8',
+          help='LoRa coding rate. "4_5", "4_6", "4_7", "4_8". (default: "4_8")')
+
+parser.add_argument('--Sf', type=int, default=7,
+          help='LoRa spreading factor. 7-12, 7-10 in NA. (default: 7)')
+
 
 args = parser.parse_args()
 
@@ -157,35 +172,44 @@ class serialGPS(threading.Thread):
 
 class LoRaGPStx(LoRa):
     '''
-    ReportInterval      in seconds controls how often the location report is sent.
-    quiet   True/False  is used to turn off/on local printing.
-    verbose True/False  is used by pySX127x to print extra information (mode setting).
+      ReportInterval      in seconds controls how often the location report is sent.
+      quiet   True/False  is used to turn off/on local printing.
+    Arguments passed on to class LoRa from SX127x.LoRa
+      freq=915, bw=125, Cr='4_8', Sf=7,
+      verbose True/False  is used by pySX127x to print extra information (mode setting).
+      do_calibration=True, calibration_freq=915
     '''
     
     def __init__(self, ReportInterval=1.0, quiet=False,
+           freq=915, bw=125, Cr='4_8', Sf=7,
            verbose=False, do_calibration=True, calibration_freq=915):
+        
         super(LoRaGPStx, self).__init__(verbose, do_calibration, calibration_freq)
+        
         self.ReportInterval=ReportInterval
-        self.quiet=quiet
+        self.quiet=quiet        
+        
         self.set_mode(MODE.SLEEP)
         self.set_dio_mapping([1,0,0,0,0,0])
-        self.set_freq(915)
-        
-        #  Medium Range  Defaults after init are 434.0MHz, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on 13 dBm
-        #  Slow+long range  Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on. 13 dBm
-        
+                
         #self.set_pa_config(pa_select=1)
         self.set_pa_config(pa_select=1, max_power=21, output_power=15)
         #self.set_pa_config(max_power=0x04, output_power=0x0F)
         #self.set_pa_config(max_power=0x04, output_power=0b01000000)
         
-        self.set_freq(915.0)  
-        self.set_bw(BW.BW125)
-        self.set_coding_rate(CODING_RATE.CR4_8)
+        self.set_freq(freq)  
+
+        self.set_bw((BW.BW125, BW.BW250, BW.BW500)[(125, 250, 500).index(bw)])
+
+        CR= {"4_5": CODING_RATE.CR4_5, 
+             "4_6": CODING_RATE.CR4_6,
+             "4_7": CODING_RATE.CR4_7, 
+             "4_8": CODING_RATE.CR4_8 }[args.Cr]
+        self.set_coding_rate(CR)
+
+        self.set_spreading_factor(Sf)
+
         #self.set_agc_auto_on(True)
-        # setting spreading_factor(12)  reports 4096 chips/symb  but does not work yet
-        # not setting (comment out)     reports 128 chips/symb  and works
-        # self.set_spreading_factor(12)
         self.set_rx_crc(False)   #True
         #self.set_pa_ramp(PA_RAMP.RAMP_50_us)
         #self.set_lna_gain(GAIN.G1)
@@ -206,10 +230,6 @@ class LoRaGPStx(LoRa):
         self.clear_irq_flags(TxDone=1)
         sleep(self.ReportInterval)
         
-        #p = gpsd.get_current()
-        #except: return(None)
-        #x = hn + ' ' + str(p.lat) + ' ' + str(p.lon )+ ' ' + str(p.time)
-        
         x = hn + ' ' + str(lat) + ' ' + str(lon)  + ' ' + str(date) + 'T' + str(tm)
         if not self.quiet :
            #sys.stdout.flush()
@@ -218,27 +238,7 @@ class LoRaGPStx(LoRa):
            #print([ord(ch) for ch in x])
         self.write_payload([ord(ch) for ch in x])
         self.set_mode(MODE.TX)
-    
-    def on_cad_done(self):
-        print("\non_CadDone")
-        print(self.get_irq_flags())
-    
-    def on_rx_timeout(self):
-        print("\non_RxTimeout")
-        print(self.get_irq_flags())
-    
-    def on_valid_header(self):
-        print("\non_ValidHeader")
-        print(self.get_irq_flags())
-    
-    def on_payload_crc_error(self):
-        print("\non_PayloadCrcError")
-        print(self.get_irq_flags())
-    
-    def on_fhss_change_channel(self):
-        print("\non_FhssChangeChannel")
-        print(self.get_irq_flags())
-    
+        
     def start(self):
         #global args
         if not self.quiet : sys.stdout.write("\rstart")
@@ -250,7 +250,7 @@ class LoRaGPStx(LoRa):
             sleep(1)
 
 ###################################################################
-
+        
 ###################################################################
 
 if __name__ == '__main__':
@@ -259,15 +259,21 @@ if __name__ == '__main__':
    logging.info('main thread starting. ' + strftime('%Y-%m-%d %H:%M:%S %Z'))
 
    logging.info('setting LoRa.' )
-   lora = LoRaGPStx(ReportInterval=args.report, quiet=args.quiet, verbose=False)
-
-   if not args.quiet : print(lora)
+      
+     
+   lora = LoRaGPStx(ReportInterval=args.report, quiet=args.quiet, 
+             freq=args.freq, bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
+             verbose=False)
+   
+   assert(lora.get_freq() in (169, 315, 433, 868, 915))
+   assert(lora.get_freq() == 915)  # in North America
    
    #assert(lora.get_lna()['lna_gain'] == GAIN.NOT_USED)
-   assert(lora.get_agc_auto_on() == 1)
-   assert(lora.get_freq() == 915)
+   #assert(lora.get_agc_auto_on() == 1)
 
-   if not args.quiet : print("Report interval %f s" % args.report)
+   if not args.quiet :
+      print(lora)
+      print("Report interval %f s" % args.report)
   
    shutdown = threading.Event()
 
