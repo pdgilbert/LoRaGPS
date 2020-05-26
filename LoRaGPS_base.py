@@ -18,6 +18,17 @@ from AIS import AIS1_encode
 import os
 import socket
 
+channels = {
+   'CH_00_900': 903.08, 'CH_01_900': 905.24, 'CH_02_900': 907.40,
+   'CH_03_900': 909.56, 'CH_04_900': 911.72, 'CH_05_900': 913.88,
+   'CH_06_900': 916.04, 'CH_07_900': 918.20, 'CH_08_900': 920.36,
+   'CH_09_900': 922.52, 'CH_10_900': 924.68, 'CH_11_900': 926.84, 'CH_12_900': 915,
+
+   'CH_10_868': 865.20, 'CH_11_868': 865.50, 'CH_12_868': 865.80,
+   'CH_13_868': 866.10, 'CH_14_868': 866.40, 'CH_15_868': 866.70,
+   'CH_16_868': 867   , 'CH_17_868': 868   ,   
+   }
+
 parser = argparse.ArgumentParser(description= 
            'Read GPS using serial (not gpsd) and send GPS location via LoRa.')
 
@@ -26,11 +37,15 @@ parser.add_argument('--quiet', type=bool, default=False,
 
 # following are settings passed to LoRa
 
-parser.add_argument('--freq', type=int, default=915,
-          help='LoRa frequency. 169, 315, 433, 868 Mhz. (default: 915)')
+parser.add_argument('--channel', type=str, default='CH_12_900',
+          help='LoRa channel (frequency). (default: "CH_12_900" is 915Mhz)' + 
+               '\nThe full list of channels is ' + str(channels))
+
+#parser.add_argument('--freq', type=int, default=915,
+#          help='LoRa frequency. 169, 315, 433, 868 Mhz. (default: 915)')
 
 parser.add_argument('--bw', type=int, default=125,
-          help='LoRa frequency. 0-9 or 125kHz, 250kHz and 500kHz Mhz. (default: )')
+          help='LoRa bandwidth. 125, 250 and 500 (khz). (default: 125)')
 
 parser.add_argument('--Cr', type=str, default='4_8',
           help='LoRa coding rate. "4_5", "4_6", "4_7", "4_8". (default: "4_8")')
@@ -38,8 +53,9 @@ parser.add_argument('--Cr', type=str, default='4_8',
 parser.add_argument('--Sf', type=int, default=7,
           help='LoRa spreading factor. 7-12, 7-10 in NA. (default: 7)')
 
-
 args = parser.parse_args()
+
+assert(args.channel in channels)
 
 
 MCAST_GROUP = '224.1.1.4'
@@ -197,7 +213,7 @@ class LoRaGPSrx(LoRa):
 
 
 lora = LoRaGPSrx(quiet=args.quiet, 
-             freq=args.freq, bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
+             freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
              verbose=False)
 
 lora.set_mode(MODE.STDBY)
@@ -215,9 +231,9 @@ lora.set_mode(MODE.STDBY)
 lora.set_pa_config(pa_select=1, max_power=21, output_power=15)
 #lora.set_pa_config(pa_select=1)
 
-lora.set_freq(915.0)  
-lora.set_bw(BW.BW125)
-lora.set_coding_rate(CODING_RATE.CR4_5)   #.CR4_8
+#lora.set_freq(915.0)  
+#lora.set_bw(BW.BW125)
+#lora.set_coding_rate(CODING_RATE.CR4_5)   #.CR4_8
 #lora.set_spreading_factor(10)  #1024 chips/symbol
 lora.set_rx_crc(False)   #True
 #lora.set_lna_gain(GAIN.G1)
@@ -230,7 +246,9 @@ lora.set_low_data_rate_optim(False)  #True
 
 if not quiet :  print(lora)
 assert(lora.get_agc_auto_on() == 1)
-assert(lora.get_freq() == 915)
+#assert(lora.get_freq() == channels[args.channel])
+print(lora.get_freq())
+print(channels[args.channel])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)

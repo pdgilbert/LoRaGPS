@@ -41,6 +41,17 @@ logging.info('message level info.')
 
 global lat, lon, tm, date
 
+channels = {
+   'CH_00_900': 903.08, 'CH_01_900': 905.24, 'CH_02_900': 907.40,
+   'CH_03_900': 909.56, 'CH_04_900': 911.72, 'CH_05_900': 913.88,
+   'CH_06_900': 916.04, 'CH_07_900': 918.20, 'CH_08_900': 920.36,
+   'CH_09_900': 922.52, 'CH_10_900': 924.68, 'CH_11_900': 926.84, 'CH_12_900': 915,
+
+   'CH_10_868': 865.20, 'CH_11_868': 865.50, 'CH_12_868': 865.80,
+   'CH_13_868': 866.10, 'CH_14_868': 866.40, 'CH_15_868': 866.70,
+   'CH_16_868': 867   , 'CH_17_868': 868   ,   
+   }
+
 parser = argparse.ArgumentParser(description= 
            'Read GPS using serial (not gpsd) and send GPS location via LoRa.')
 
@@ -52,11 +63,15 @@ parser.add_argument('--quiet', type=bool, default=False,
 
 # following are settings passed to LoRa
 
-parser.add_argument('--freq', type=int, default=915,
-          help='LoRa frequency. 169, 315, 433, 868, 915 Mhz. (default: 915)')
+parser.add_argument('--channel', type=str, default='CH_12_900',
+          help='LoRa channel (frequency). (default: "CH_12_900" is 915Mhz)' + 
+               '\nThe full list of channels is ' + str(channels))
+
+#parser.add_argument('--freq', type=int, default=915,
+#          help='LoRa frequency. 169, 315, 433, 868, 915 Mhz. (default: 915)')
 
 parser.add_argument('--bw', type=int, default=125,
-          help='LoRa frequency. 0-9 or 125kHz, 250kHz and 500kHz Mhz. (default: )')
+          help='LoRa bandwidth. 125, 250 and 500 (khz). (default: 125)')
 
 parser.add_argument('--Cr', type=str, default='4_8',
           help='LoRa coding rate. "4_5", "4_6", "4_7", "4_8". (default: "4_8")')
@@ -66,6 +81,8 @@ parser.add_argument('--Sf', type=int, default=7,
 
 
 args = parser.parse_args()
+
+assert(args.channel in channels)
 
 hn = gethostname()
 
@@ -115,12 +132,13 @@ def parseNMEA0183(rxx):
 class serialGPS(threading.Thread):
    """
    Threading object used to read serial GPS and maintain current information.
-   The information is (not yet) broadcast. (possibly should reponds to queries like gpsd.)
-   In testing the information is periodically printed.
+   The information is kept in global variables and used by the LoRaGPStx instance
+   to broadcast. 
    
-   This process keeps most recent lat, lon, dateTtime, ...
-   (A timeout should set values to null if they get too old, to avoid illusion
-   that GPS is working.)
+   This process keeps the most recent lat, lon, dateTtime, ...
+   (A timeout might set values to null if they get too old, to avoid illusion
+   that GPS is working, but that is not yet implemented. But the data does have
+   a time stamo, so that may be unnecessary)
    """
    
    def __init__(self, shutdown, port = "/dev/serial0"):
@@ -204,7 +222,7 @@ class LoRaGPStx(LoRa):
         CR= {"4_5": CODING_RATE.CR4_5, 
              "4_6": CODING_RATE.CR4_6,
              "4_7": CODING_RATE.CR4_7, 
-             "4_8": CODING_RATE.CR4_8 }[args.Cr]
+             "4_8": CODING_RATE.CR4_8 }[Cr]
         self.set_coding_rate(CR)
 
         self.set_spreading_factor(Sf)
@@ -240,7 +258,6 @@ class LoRaGPStx(LoRa):
         self.set_mode(MODE.TX)
         
     def start(self):
-        #global args
         if not self.quiet : sys.stdout.write("\rstart")
         x='Started transmit from ' + hn + '.'
         #print( [ord(ch) for ch in x])
@@ -262,11 +279,11 @@ if __name__ == '__main__':
       
      
    lora = LoRaGPStx(ReportInterval=args.report, quiet=args.quiet, 
-             freq=args.freq, bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
+             freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
              verbose=False)
    
-   assert(lora.get_freq() in (169, 315, 433, 868, 915))
-   assert(lora.get_freq() == 915)  # in North America
+   #assert(lora.get_freq() in (169, 315, 433, 868, 915))
+   #assert(lora.get_freq() == 915)  # in North America just channel 12
    
    #assert(lora.get_lna()['lna_gain'] == GAIN.NOT_USED)
    #assert(lora.get_agc_auto_on() == 1)

@@ -80,13 +80,13 @@ and note the pid to stop it with
 Both `LoRaGPS_sensor.py` and ` LoRaGPS_base.py`  take command line arguments to set the
 frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argument for
 more details. There are trade offs amoung competing objectives: distance, date rate, 
-data reliabilty, channel congestion. These are affected by the various settings.
-The best is  difficult determined and will depend on the application. 
+data reliabilty, channel congestion, battery life ... . 
+These are affected by the various settings.
+The best is difficult determined and will depend on the application. 
 For more information, see for example:
 
-https://docs.exploratory.engineering/lora/dr_sf/
-https://mylorawan.blogspot.com/2016/05/spread-factor-vs-payload-size-on-lora.html
-https://medium.com/home-wireless/testing-lora-radios-with-the-limesdr-mini-part-2-37fa481217ff
+[exploratory engineering](https://docs.exploratory.engineering/lora/dr_sf/)
+[Mark Zachmann blog](https://medium.com/home-wireless/testing-lora-radios-with-the-limesdr-mini-part-2-37fa481217ff)
 
 
 ##  Hardware Setup Notes
