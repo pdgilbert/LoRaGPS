@@ -282,8 +282,8 @@ if __name__ == '__main__':
              freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
              verbose=False)
    
-   #assert(lora.get_freq() in (169, 315, 433, 868, 915))
    #assert(lora.get_freq() == 915)  # in North America just channel 12
+   assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
    
    #assert(lora.get_lna()['lna_gain'] == GAIN.NOT_USED)
    #assert(lora.get_agc_auto_on() == 1)

@@ -82,7 +82,7 @@ frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argume
 more details. There are trade offs amoung competing objectives: distance, date rate, 
 data reliabilty, channel congestion, battery life ... . 
 These are affected by the various settings.
-The best is difficult determined and will depend on the application. 
+The best is difficult to determined and will depend on the application. 
 For more information, see for example:
 
 [exploratory engineering](https://docs.exploratory.engineering/lora/dr_sf/)

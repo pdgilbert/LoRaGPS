@@ -246,9 +246,9 @@ lora.set_low_data_rate_optim(False)  #True
 
 if not quiet :  print(lora)
 assert(lora.get_agc_auto_on() == 1)
-#assert(lora.get_freq() == channels[args.channel])
-print(lora.get_freq())
-print(channels[args.channel])
+assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
+#print(lora.get_freq())
+#print(channels[args.channel])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
