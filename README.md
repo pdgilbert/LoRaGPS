@@ -38,16 +38,12 @@ The LoRa `tx` and `rx` use `SX127x` from `pySX127x`.
                        LoRaGPS_base.py. Wait for UDP  multicasts and print them .
                        Status: working.
 
-`ais-fake-tx.py`     - Wait for a TCP connection then read lines from ais-fake.txt and 
-                       write them to HOST/PORT. For testing sending of data to OpenCPN.
-                       Status: working but superceded by UDP version.
-
-`ais-fake-rx.py`     - For testing TCP connection in ais-fake-tx.py.
-                       Status: workingbut superceded by UDP version.
-
-`ais-fake.txt`       - Text file with sample AIS data for ais-fake-tx.py testing.
-
 `track2gpx`          - Utility to convert recorded tracks to gpx format.
+
+`HOSTNAME_MMSIs.json.example`  - Example HOSTNAME_MMSIs.json file.
+
+`TRACK.json.example`  - Example TRACK.json file.
+
 
 The unit testing for `AIS.py` is run by   `python3 lib/AIS.py`
  
@@ -86,8 +82,8 @@ data reliabilty, channel congestion, battery life ... .
 These are affected by the various settings.
 The best is difficult to determined and will depend on the application. 
 For more information, see for example:
-
 [exploratory engineering](https://docs.exploratory.engineering/lora/dr_sf/)
+and
 [Mark Zachmann blog](https://medium.com/home-wireless/testing-lora-radios-with-the-limesdr-mini-part-2-37fa481217ff)
 
 
