@@ -65,7 +65,7 @@ or, if the file has execute permission
 ```
 
 or, if the sensor system is to move in a way that the shell will disconect, for example,
-if the seesion starting  `LoRaGPS_sensor.py` is by ssh over wifi and the sensor system
+if the session starting  `LoRaGPS_sensor.py` is by ssh over wifi and the sensor system
 will be move out of wifi range, then try starting with `nohup`:
 ```
   nohup  python3  LoRaGPS_sensor.py --quiet=True  --report=15.0 &

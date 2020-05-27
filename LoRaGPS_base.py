@@ -64,6 +64,7 @@ assert(args.channel in channels)
 assert(args.Cr in     CodingRates)
 assert(args.bw in (125, 250, 500))
 assert(args.Sf in    range(7, 13))
+# North America requires 915MHz, Sf 7-10 == 128 - 1024 chips/symbol == 2**7 - 2**10
 
 
 MCAST_GROUP = '224.1.1.4'
@@ -113,17 +114,31 @@ class LoRaGPSrx(LoRa):
         
         self.quiet=quiet
         
+
+        # SX127x class LoRa has (Medium Range  Defaults after init):
+        #  Medium Range     434.0MHz, Bw = 125 kHz, Cr = 4/5, Sf =  128chips/symbol, CRC on 13 dBm
+        #  Slow+long range            Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on 13 dBm
+
+        # CHECK  CRC on 13 dBm
+        
         self.set_mode(MODE.SLEEP)
-        self.set_dio_mapping([0] * 6)
-        
         self.set_freq(freq)
-        
         self.set_bw((BW.BW125, BW.BW250, BW.BW500)[(125, 250, 500).index(bw)])
-        
         self.set_coding_rate(CodingRates[args.Cr])
-        
         self.set_spreading_factor(Sf)
         
+        self.set_dio_mapping([0] * 6)
+        self.set_mode(MODE.STDBY)
+        self.set_pa_config(pa_select=1, max_power=21, output_power=15)
+        self.set_rx_crc(False)   #True
+        self.set_low_data_rate_optim(False)  #True
+        
+        #.set_pa_ramp(PA_RAMP.RAMP_50_us)
+        #.set_agc_auto_on(True)
+        #.set_pa_config(pa_select=1)
+        #.set_lna_gain(GAIN.G1)
+        #.set_implicit_header_mode(False)
+   
         self.last_tm = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     
     def on_rx_done(self):
@@ -220,39 +235,10 @@ lora = LoRaGPSrx(quiet=args.quiet,
              freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
              verbose=False)
 
-lora.set_mode(MODE.STDBY)
-#lora.set_pa_ramp(PA_RAMP.RAMP_50_us)
-#lora.set_agc_auto_on(True)
-
-# SX127x class LoRa has (Medium Range  Defaults after init):
-#  Medium Range     434.0MHz, Bw = 125 kHz, Cr = 4/5, Sf =  128chips/symbol, CRC on 13 dBm
-#  Slow+long range            Bw = 125 kHz, Cr = 4/8, Sf = 4096chips/symbol, CRC on 13 dBm
-
-# North America requires 915MHz, Sf 7-10 == 128 - 1024 chips/symbol == 2**7 - 2**10
-# This code (class LoRaGPSrx) SHOULD sets defaults 
-# 915.0MHz, Bw = 125 kHz, Cr = 4/5, Sf = 10 == 1024 chips/symbol, CRC on 13 dBm
-
-lora.set_pa_config(pa_select=1, max_power=21, output_power=15)
-#lora.set_pa_config(pa_select=1)
-
-#lora.set_freq(915.0)  
-#lora.set_bw(BW.BW125)
-#lora.set_coding_rate(CODING_RATE.CR4_5)   #.CR4_8
-#lora.set_spreading_factor(10)  #1024 chips/symbol
-lora.set_rx_crc(False)   #True
-#lora.set_lna_gain(GAIN.G1)
-#lora.set_implicit_header_mode(False)
-lora.set_low_data_rate_optim(False)  #True
-#lora.set_pa_ramp(PA_RAMP.RAMP_50_us)
-#lora.set_agc_auto_on(True)
-
-#lora.set_pa_config(pa_select=1)
-
 if not quiet :  print(lora)
+
 assert(lora.get_agc_auto_on() == 1)
 assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
-#print(lora.get_freq())
-#print(channels[args.channel])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
