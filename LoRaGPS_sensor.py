@@ -304,7 +304,7 @@ if __name__ == '__main__':
    logging.debug(threading.enumerate())
  
    def shutdownHandler(signum, frame):
-       if not args.quiet : sys.stderr.write("Interrupt. Shutting down.\n")
+       if not args.quiet : sys.stderr.write("Interrupt.\n")
        logging.info('main thread setting shutdown signal.')
        shutdown.set()  # to exit threads
        sleep(2)
@@ -317,7 +317,7 @@ if __name__ == '__main__':
           sys.stdout.flush()
           #print(lora)
           #sys.stdout.flush()
-          sys.stderr.write("Shut down.\n")
+          sys.stderr.write("Sensor system shut down.\n")
        sys.exit()
 
    # ^C works if process is not deamonized with &

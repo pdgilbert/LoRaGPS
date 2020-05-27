@@ -17,6 +17,7 @@ from AIS import AIS1_encode
 
 import os
 import socket
+import json
 
 #https://www.rfwireless-world.com/Tutorials/LoRa-channels-list.html
 channels = {
@@ -92,14 +93,14 @@ BOARD.setup()
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 #parser = LoRaArgumentParser("Continous LoRa receiver.")
 
-mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}   #316 is Canada; 338 is USA
 
 # see https://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
-# eventually
-#with open('MMSIs_table.json', 'r') as f:  mmsis = json.load(f)
-#bt   = mmsis["BT_ID"] 
-#mmsi = mmsis["mmsi"] 
-#ct = mmsis["country"] 
+if multicast :
+   #mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}   #316 is Canada; 338 is USA
+   with open('HOSTNAME_MMSIs.json', 'r') as f:  mmsis = json.load(f)
+   #bt   = mmsis["BT_ID"] 
+   #mmsi = mmsis["mmsi"] 
+   #ct = mmsis["country"] 
 
 #track = ['BT-1', 'mqtt1']
 track = ['BT-1']
@@ -273,5 +274,5 @@ finally:
         f.close()
     if not quiet :
         sys.stdout.flush()
-        sys.stderr.write("Shut down.\n")
+        sys.stderr.write("Base station shut down.\n")
 

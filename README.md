@@ -107,6 +107,21 @@ Then 'enable' and 'apply'.
 The group and port can be set as command line arguments to `LoRaGPS_base.py`. 
 If `mcast_group` is set to "NA" then AIS output is turned off.
 
+If AIS output is not turned off then a file `HOSTNAME_MMSIs.json` will be read from the
+local directory. If this file does not exist then the code will fail.
+This file must give a json dict of the hostname to mmsi mapping, for example
+```
+{
+ "mqtt1": 316456789 , 
+ "BT-1" : 338654321
+}
+```
+One important reason *NOT* to broadcast the pseudo AIS over VHF radio is that these MMSI 
+need not be legitimate. These are only used locally to identify the senser systems (which
+may be on boats but do not have registered MMSI identifiers). The first three digits of the
+MMSI is a MID country code (in the message type used). This can be used to get OpenCPN to
+indicate a country flag (316 is Canada, 338 is USA).
+
 The  utility `ais-fake-tx-udp.py` may be useful for testing the `OpenCPN` setup, and
 the  utility `ais-fake-rx-udp.py` is for testing the `ais-fake-tx-udp.py`setup.
 
@@ -122,6 +137,7 @@ standard `gpx` file that can be displayed in mapping software.
 ```
 There are online utilities to convert `gpx` to a format used by Google Maps, and there are
 mapping programs that can use `gpx` directly. (I have been using GPXSee.)
+
 
 ##  Hardware Setup Notes
 
