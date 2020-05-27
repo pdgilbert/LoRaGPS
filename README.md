@@ -3,6 +3,8 @@ Transmit GPS and other information with LoRa
 
 ##  Contents
 - [Summary and Status](#summary-and-status)
+- [Pseudo AIS and OpenCPN Notes](#Pseudo-AIS-and-OpenCPN-notes)
+- [Tracking and GPX Notes](#Tracking-and-GPX-Notes)
 - [Hardware Setup Notes](#hardware-setup-notes)
 - [sensor system](#sensor-system)
 - [base station](#base-station)
@@ -88,6 +90,38 @@ For more information, see for example:
 [exploratory engineering](https://docs.exploratory.engineering/lora/dr_sf/)
 [Mark Zachmann blog](https://medium.com/home-wireless/testing-lora-radios-with-the-limesdr-mini-part-2-37fa481217ff)
 
+
+##  Pseudo AIS and OpenCPN Notes
+
+The `LoRaGPS_sensor.py` reads NMEA from the GPS, decodes location messages, and transmits
+the location data, time stamp, and an identifier (hostname) over LoRa. The `LoRaGPS_base.py`
+receives the messages and constructs a pseudo AIS message that is output over the local
+network and is good enough that it can be input into OpenCPN. Do *NOT*
+broadcast this over VHF radio, it is not real AIS and would confuse true AIS receivers.
+
+To view in OpenCPN  go to tools>connections and add UDP network connection using
+the multicast group (default '224.1.1.4') as the network address and the port (default 65433)
+Then 'enable' and 'apply'. 
+(Note that the multicast group(s) take the place of a host IP address.)
+
+The group and port can be set as command line arguments to `LoRaGPS_base.py`. 
+If `mcast_group` is set to "NA" then AIS output is turned off.
+
+The  utility `ais-fake-tx-udp.py` may be useful for testing the `OpenCPN` setup, and
+the  utility `ais-fake-rx-udp.py` is for testing the `ais-fake-tx-udp.py`setup.
+
+
+##  Tracking and GPX Notes
+
+When `LoRaGPS_base.py` receives a messages it will record it ...
+
+The utility `track2gpx` can be used to convert the recorded locataion information into a
+standard `gpx` file that can be displayed in mapping software. 
+```
+  track2gpx infile.txt  outfile.gpx 
+```
+There are online utilities to convert `gpx` to a format used by Google Maps, and there are
+mapping programs that can use `gpx` directly. (I have been using GPXSee.)
 
 ##  Hardware Setup Notes
 
@@ -266,6 +300,9 @@ if gpsd is installed, it may be necessary to do
   sudo systemctl stop  gpsd
   sudo systemctl disable  gpsd
 ```
+The sensor system identifies itself using its hostname. (See notes on AIS and on tracking.)
+Be sure to set a different hostname for each sensor system, and keep the information for
+setting up AIS and tracking.
 
 Install LoRaGPS_sensor.py and run it
 ```

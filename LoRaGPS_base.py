@@ -39,6 +39,17 @@ parser = argparse.ArgumentParser(description=
 parser.add_argument('--quiet', type=bool, default=False,
                     help='if True suppress local printing. (default: False)')
 
+
+# following are settings for AIS
+
+parser.add_argument('--mcast_group', type=str, default='224.1.1.4',
+          help='Network multicast group for AIS output (default: "224.1.1.4")' +
+                ' If mcast_group is set to "NA" then AIS output is turned off.')
+
+parser.add_argument('--mcast_port', type=int, default=65433,
+          help='Network multicast port. (default: 65433)')
+
+
 # following are settings passed to LoRa
 
 parser.add_argument('--channel', type=str, default='CH_12_900',
@@ -60,6 +71,7 @@ parser.add_argument('--Sf', type=int, default=7,
 
 args = parser.parse_args()
 
+
 assert(args.channel in channels)
 assert(args.Cr in     CodingRates)
 assert(args.bw in (125, 250, 500))
@@ -67,9 +79,9 @@ assert(args.Sf in    range(7, 13))
 # North America requires 915MHz, Sf 7-10 == 128 - 1024 chips/symbol == 2**7 - 2**10
 
 
-MCAST_GROUP = '224.1.1.4'
-PORT  = 65433
-
+MCAST_GROUP = args.mcast_group
+MCAST_PORT  = args.mcast_port
+multicast = MCAST_GROUP is not 'NA'
 TTL = 20
 
 quiet=args.quiet
@@ -178,13 +190,14 @@ class LoRaGPSrx(LoRa):
            
            if bt in track : ok = track_file_handles[bt].write(record + "\n")
            
-           ais = AIS1_encode(
-              mmsi=mmsis[bt], navStat=0, ROT=128, SOG=1023, PosAcc=0, 
-              lon= lon, lat= lat, COG=360, HDG=511, tm=int(tm[5]), mvInd=0,  
-              spare=0, RAIM=False, RadStat=0, returnk=False)
-           
-           
-           sock.sendto(ais.encode(), (MCAST_GROUP, PORT))
+           if multicast :
+              ais = AIS1_encode(
+                 mmsi=mmsis[bt], navStat=0, ROT=128, SOG=1023, PosAcc=0, 
+                 lon= lon, lat= lat, COG=360, HDG=511, tm=int(tm[5]), mvInd=0,  
+                 spare=0, RAIM=False, RadStat=0, returnk=False)
+              
+              
+              sock.sendto(ais.encode(), (MCAST_GROUP, MCAST_PORT))
    
         self.last_tm = tm                 # really need this for each bt
         #print( [ord(ch) for ch in payload])
@@ -240,9 +253,10 @@ if not quiet :  print(lora)
 assert(lora.get_agc_auto_on() == 1)
 assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
-print('network (UDP) multicast group to %s:%i' % (MCAST_GROUP, PORT))
+if multicast:
+   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+   sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
+   print('network (UDP) multicast group to %s:%i' % (MCAST_GROUP, MCAST_PORT))
 
 try:
     lora.start()
