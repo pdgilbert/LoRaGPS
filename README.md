@@ -128,9 +128,30 @@ the  utility `ais-fake-rx-udp.py` is for testing the `ais-fake-tx-udp.py`setup.
 
 ##  Tracking and GPX Notes
 
-When `LoRaGPS_base.py` receives a messages it will record it ...
+When `LoRaGPS_base.py` receives a messages it can record it in files in the subdirectory
+`TRACKS/` with names determined by the hostnames (e.g. `BT-1.txt`). Recording is controlled
+by the existence and contents of files: `TRACK.json`, `NOT_TRACK.json` and `HOSTNAME_MMSIs.json`.
+If `TRACK.json` exists then its contents should be a list of hostnames of senser systems
+for which the gps reports should be recorded, for example 
+```
+[
+ "BT-1", 
+ "mqtt1"
+]
 
-The utility `track2gpx` can be used to convert the recorded locataion information into a
+```
+Note that json files are sensitive to the use of double quotes rather than single quotes.
+If `TRACK.json` exists then `NOT_TRACK.json` is ignored and tracking is done on the 
+indicated senser systems when their LoRa messages arrive.
+
+If `TRACK.json` does not exist but file `HOSTNAME_MMSIs.json` exist, 
+then senser systems with hostname keys in `HOSTNAME_MMSIs.json` will be tracked unless
+they are listed in `NOT_TRACK.json`. 
+(The format of `NOT_TRACK.json` is the same as `TRACK.json`.)
+If `NOT_TRACK.json` does not exist then the full list of hostname keys 
+in `HOSTNAME_MMSIs.json` will be tracked.
+ 
+The utility `track2gpx` can be used to convert the recorded location information into a
 standard `gpx` file that can be displayed in mapping software. 
 ```
   track2gpx infile.txt  outfile.gpx 

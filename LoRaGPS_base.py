@@ -89,21 +89,37 @@ quiet=args.quiet
 
 BOARD.setup()
 
-# look at this and examples in  pySX127x if shell arguments are considered.
+# look at this and examples in  pySX127x
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 #parser = LoRaArgumentParser("Continous LoRa receiver.")
 
 
 # see https://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
 if multicast :
-   #mmsis = {"mqtt1": 316456789 , "BT-1" : 338654321}   #316 is Canada; 338 is USA
    with open('HOSTNAME_MMSIs.json', 'r') as f:  mmsis = json.load(f)
-   #bt   = mmsis["BT_ID"] 
-   #mmsi = mmsis["mmsi"] 
-   #ct = mmsis["country"] 
+
+#bt   = mmsis["BT_ID"] 
+
+if os.path.isfile('TRACK.json') :  
+    with open('TRACK.json', 'r') as f:  track = json.load(f)
+    tracking = True
+    
+elif multicast : 
+    track = list(mmsis.keys())
+    if os.path.isfile('NOT_TRACK.json') : 
+       with open('NOT_TRACK.json', 'r') as f:  rm = json.load(f)
+       for tr in rm : track.remove(tr)
+    tracking = True
+    
+else :
+   tracking = False
+   track = []
+
+# if none of the files exist consider building the list dynamically as reports arrive?
+# might require a command line build_track.
 
 #track = ['BT-1', 'mqtt1']
-track = ['BT-1']
+#track = ['BT-1']
 
 if not os.path.exists('TRACKS') :  os.makedirs('TRACKS')
 
@@ -189,7 +205,7 @@ class LoRaGPSrx(LoRa):
            
            if not self.quiet : print(record)
            
-           if bt in track : ok = track_file_handles[bt].write(record + "\n")
+           if tracking and bt in track : ok = track_file_handles[bt].write(record + "\n")
            
            if multicast :
               ais = AIS1_encode(
