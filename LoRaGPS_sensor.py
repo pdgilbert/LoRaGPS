@@ -41,6 +41,7 @@ logging.info('message level info.')
 
 global lat, lon, tm, date
 
+#https://www.rfwireless-world.com/Tutorials/LoRa-channels-list.html
 channels = {
    'CH_00_900': 903.08, 'CH_01_900': 905.24, 'CH_02_900': 907.40,
    'CH_03_900': 909.56, 'CH_04_900': 911.72, 'CH_05_900': 913.88,
@@ -51,6 +52,9 @@ channels = {
    'CH_13_868': 866.10, 'CH_14_868': 866.40, 'CH_15_868': 866.70,
    'CH_16_868': 867   , 'CH_17_868': 868   ,   
    }
+
+CodingRates = {"4_5": CODING_RATE.CR4_5,  "4_6": CODING_RATE.CR4_6,
+               "4_7": CODING_RATE.CR4_7,  "4_8": CODING_RATE.CR4_8 }
 
 parser = argparse.ArgumentParser(description= 
            'Read GPS using serial (not gpsd) and send GPS location via LoRa.')
@@ -65,7 +69,7 @@ parser.add_argument('--quiet', type=bool, default=False,
 
 parser.add_argument('--channel', type=str, default='CH_12_900',
           help='LoRa channel (frequency). (default: "CH_12_900" is 915Mhz)' + 
-               '\nThe full list of channels is ' + str(channels))
+               ' The full list of channels is ' + str(channels))
 
 #parser.add_argument('--freq', type=int, default=915,
 #          help='LoRa frequency. 169, 315, 433, 868, 915 Mhz. (default: 915)')
@@ -74,15 +78,19 @@ parser.add_argument('--bw', type=int, default=125,
           help='LoRa bandwidth. 125, 250 and 500 (khz). (default: 125)')
 
 parser.add_argument('--Cr', type=str, default='4_8',
-          help='LoRa coding rate. "4_5", "4_6", "4_7", "4_8". (default: "4_8")')
+          help='LoRa coding rate. (default: "4_8")' + 
+              ' The full list of coding rates is ' + str(CodingRates))
 
 parser.add_argument('--Sf', type=int, default=7,
-          help='LoRa spreading factor. 7-12, 7-10 in NA. (default: 7)')
+          help='LoRa spreading factor. 7-12, 7-10 at 915Mhz. (default: 7)')
 
 
 args = parser.parse_args()
 
-assert(args.channel in channels)
+assert(args.channel  in  channels)
+assert(args.Cr in     CodingRates)
+assert(args.bw in (125, 250, 500))
+assert(args.Sf in    range(7, 13))
 
 hn = gethostname()
 
@@ -219,11 +227,7 @@ class LoRaGPStx(LoRa):
 
         self.set_bw((BW.BW125, BW.BW250, BW.BW500)[(125, 250, 500).index(bw)])
 
-        CR= {"4_5": CODING_RATE.CR4_5, 
-             "4_6": CODING_RATE.CR4_6,
-             "4_7": CODING_RATE.CR4_7, 
-             "4_8": CODING_RATE.CR4_8 }[Cr]
-        self.set_coding_rate(CR)
+        self.set_coding_rate(CodingRates[Cr])
 
         self.set_spreading_factor(Sf)
 
