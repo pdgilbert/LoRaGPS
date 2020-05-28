@@ -16,7 +16,7 @@ eventually appear here. For the time being the following content is a rough
 status and "to do" list intended mainly to help me keep track of the 
 different pieces.
 
-The LoRa `tx` and `rx` use `SX127x` from `pySX127x`.
+The `LoRaGPS_sensor` and `LoRaGPS_base` use `SX127x` from `pySX127x`.
 
 `LoRaGPS_sensor.py` -  transmit message over LoRa (not LoRaWAN).
                        Status: working (on Raspberry Pi Zero W) but in active
@@ -62,7 +62,7 @@ or, if the file has execute permission
   LoRaGPS_sensor.py 
 ```
 
-or, if the sensor system is to move in a way that the shell will disconect, for example,
+or, if the sensor system is to move in a way that the shell will disconnect, for example,
 if the session starting  `LoRaGPS_sensor.py` is by ssh over wifi and the sensor system
 will be move out of wifi range, then try starting with `nohup`:
 ```
@@ -77,8 +77,8 @@ and note the pid to stop it with
 
 Both `LoRaGPS_sensor.py` and ` LoRaGPS_base.py`  take command line arguments to set the
 frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argument for
-more details. There are trade offs amoung competing objectives: distance, date rate, 
-data reliabilty, channel congestion, battery life ... . 
+more details. There are trade offs among competing objectives: distance, date rate, 
+data reliability, channel congestion, battery life ... . 
 These are affected by the various settings.
 The best is difficult to determined and will depend on the application. 
 For more information, see for example:
@@ -113,7 +113,7 @@ This file must give a json dict of the hostname to mmsi mapping, for example
 }
 ```
 One important reason *NOT* to broadcast the pseudo AIS over VHF radio is that these MMSI 
-need not be legitimate. These are only used locally to identify the senser systems (which
+need not be legitimate. These are only used locally to identify the sensor systems (which
 may be on boats but do not have registered MMSI identifiers). The first three digits of the
 MMSI is a MID country code (in the message type used). This can be used to get OpenCPN to
 indicate a country flag (316 is Canada, 338 is USA).
@@ -127,7 +127,7 @@ the  utility `ais-fake-rx-udp.py` is for testing the `ais-fake-tx-udp.py`setup.
 When `LoRaGPS_base.py` receives a messages it can record it in files in the subdirectory
 `TRACKS/` with names determined by the hostnames (e.g. `BT-1.txt`). Recording is controlled
 by the existence and contents of files: `TRACK.json`, `NOT_TRACK.json` and `HOSTNAME_MMSIs.json`.
-If `TRACK.json` exists then its contents should be a list of hostnames of senser systems
+If `TRACK.json` exists then its contents should be a list of hostnames of sensor systems
 for which the gps reports should be recorded, for example 
 ```
 [
@@ -138,10 +138,10 @@ for which the gps reports should be recorded, for example
 ```
 Note that json files are sensitive to the use of double quotes rather than single quotes.
 If `TRACK.json` exists then `NOT_TRACK.json` is ignored and tracking is done on the 
-indicated senser systems when their LoRa messages arrive.
+indicated sensor systems when their LoRa messages arrive.
 
 If `TRACK.json` does not exist but file `HOSTNAME_MMSIs.json` exist, 
-then senser systems with hostname keys in `HOSTNAME_MMSIs.json` will be tracked unless
+then sensor systems with hostname keys in `HOSTNAME_MMSIs.json` will be tracked unless
 they are listed in `NOT_TRACK.json`. 
 (The format of `NOT_TRACK.json` is the same as `TRACK.json`.)
 If `NOT_TRACK.json` does not exist then the full list of hostname keys 
