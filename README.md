@@ -18,31 +18,31 @@ different pieces.
 
 The `LoRaGPS_sensor` and `LoRaGPS_base` use `SX127x` from `pySX127x`.
 
-`LoRaGPS_sensor.py` -  transmit message over LoRa (not LoRaWAN).
+- `LoRaGPS_sensor.py` -  transmit message over LoRa (not LoRaWAN).
                        Status: working (on Raspberry Pi Zero W) but in active
                         development and re-org.
 
-`LoRaGPS_base.py` -  receive message over LoRa.
+- `LoRaGPS_base.py` -  receive message over LoRa.
                      Status: working (on Raspberry Pi 3Bv1.2) but in active
                         development and re-org.
 
-`lib/AIS.py`    -  Not real AIS! Utilities for converting LoRa broadcast of GPS   
+- `lib/AIS.py`    -  Not real AIS! Utilities for converting LoRa broadcast of GPS   
                 information into AIS messages to feed into OpenCPN. 
                 Status: working but possible precision problem with lon and lat.
 
-`ais-fake-tx-udp.py` - For testing sending of data to OpenCPN. 
+- `ais-fake-tx-udp.py` - For testing sending of data to OpenCPN. 
                        Establish UDP multicast group and send some (AIS) messages
                        on thet IFACE/PORT. Status: working.
 
-`ais-fake-rx-udp.py` - For testing UDP multicast from ais-fake-tx-udp.py and
+- `ais-fake-rx-udp.py` - For testing UDP multicast from ais-fake-tx-udp.py and
                        LoRaGPS_base.py. Wait for UDP  multicasts and print them .
                        Status: working.
 
-`track2gpx`          - Utility to convert recorded tracks to gpx format.
+- `track2gpx`          - Utility to convert recorded tracks to gpx format.
 
-`HOSTNAME_MMSIs.json.example`  - Example HOSTNAME_MMSIs.json file.
+- `HOSTNAME_MMSIs.json.example`  - Example HOSTNAME_MMSIs.json file.
 
-`TRACK.json.example`  - Example TRACK.json file.
+- `TRACK.json.example`  - Example TRACK.json file.
 
 
 The unit testing for `AIS.py` is run by   `python3 lib/AIS.py`
@@ -73,7 +73,7 @@ and note the pid to stop it with
   kill pid 
 ```
 
-##  LoRa Software Notes
+##  LoRaGPS Software Notes
 
 Both `LoRaGPS_sensor.py` and ` LoRaGPS_base.py`  take command line arguments to set the
 frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argument for
@@ -138,7 +138,7 @@ for which the gps reports should be recorded, for example
 ```
 Note that json files are sensitive to the use of double quotes rather than single quotes.
 If `TRACK.json` exists then `NOT_TRACK.json` is ignored and tracking is done on the 
-indicated sensor systems when their LoRa messages arrive.
+indicated sensor systems.
 
 If `TRACK.json` does not exist but file `HOSTNAME_MMSIs.json` exist, 
 then sensor systems with hostname keys in `HOSTNAME_MMSIs.json` will be tracked unless
@@ -152,6 +152,9 @@ standard `gpx` file that can be displayed in mapping software.
 ```
   track2gpx infile.txt  outfile.gpx 
 ```
+The `gpx` track file can be imported into OpenCPN: go to "Route & Mark Manager"> "Tracks" tab,
+and click "Import GPX file" at the bottom. Then select and open the file.
+
 There are online utilities to convert `gpx` to a format used by Google Maps, and there are
 mapping programs that can use `gpx` directly. (I have been using GPXSee.)
 
@@ -163,8 +166,8 @@ Many other options are possible but some aspects of the code will need
 adjustment if the hardware is configured differently.
 
 There are two main parts, a "sensor system" and a "base station".
-In addition to the processors in each, the sensor system has a GPS and  
-a LoRa module which transmits information to the base station. 
+In addition to the processors in each, the sensor system has a GPS 
+and a LoRa module which transmits information to the base station. 
 The base station has a LoRa module to receive information,
 and also needs whatever is necessary to do something with that information. 
 Typically that would be a network connection to broadcast it, or a monitor
@@ -188,7 +191,7 @@ As of May 2020 the sensor system is a Raspberry Pi Zero W running
 Raspian 10 (Buster Lite). 
 
 It has a Ublox Neo-6M GPS on a no name board "GY-GPS6MV2" with VCC, RX, TX, 
-and GND solder points. These are connected to Pi pins ... respectively.
+and GND solder points. These are connected to Pi pins as follows.
 
 |  GPS   |Pi pin| Pi BCM |
 |:-------|:-----|:---------|
@@ -217,8 +220,8 @@ Raspberry Pi header pins as follows.
 The  LoRa module DIO4, DIO5, and two additions GND solder points are not used.
 
 In places where something other than 915 MHz should be used then a different
-module will be needed and be sure to check the settings in the code before
-running. 
+module will be needed and be sure to check the command line arguments as the
+defaults in the code will not be correct. 
 
 Follow the normal instructions to download and burn an SD with Raspian.
 Set up sshd if you want to run headless. 
@@ -232,7 +235,7 @@ python modules RPi.GPIO, spidev, Pyserial and pySX127x:
   pip3 install spidev 
   pip3 install Pyserial
   sudo apt install git 
-  git clone https://github.com/rpsreal/pySX127x # or another source
+  git clone https://github.com/rpsreal/pySX127x # or another source?
 ```
 
 Depending on the install location put something like
@@ -382,8 +385,9 @@ Install LoRaGPS_base.py and run it
 ```
 
 It might be possible to run OpenCPN on the base station, in which case the AIS feed from
-`LoRaGPS_base.py` can go to localhost with no special configuration. (If the base station
-is a Raspberry Pi, that may involve building OpenCPN rather than just installing it.)
+`LoRaGPS_base.py` can go to localhost with no special iptables configuration as below.
+(If the base station is a Raspberry Pi, that may involve building OpenCPN rather than 
+just installing it.)
 Otherwise the `LoRaGPS_base.py` will need to broadcast from a network port on the base station
 so that other computers can use the AIS feed. On a Raspberry Pi that may require setting up
 iptables to allow the python code to open the port. See the 'Install a firewall' section of
@@ -403,6 +407,7 @@ cat /etc/ufw/ufw.conf
 sudo ufw logging medium
 sudo ufw show listening
 ```
-
+The utilities `ais-fake-tx-udp.py` and `ais-fake-rx-udp.py` may be helpful for debugging
+the setup.
 
 

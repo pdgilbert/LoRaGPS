@@ -39,7 +39,9 @@ logging.info('message level info.')
 #logging.debug('message level debug.')
 
 
-global lat, lon, tm, date
+global lat, lon, tm, date  # globals set in serialGPS, used in LoRaGPStx
+
+hn = gethostname()  # global used in LoRaGPStx
 
 #https://www.rfwireless-world.com/Tutorials/LoRa-channels-list.html
 channels = {
@@ -92,9 +94,8 @@ assert(args.Cr in     CodingRates)
 assert(args.bw in (125, 250, 500))
 assert(args.Sf in    range(7, 13))
 
-hn = gethostname()
 
-BOARD.setup()
+###################################################################
 
 def parseNMEA0183(rxx):
    
@@ -276,15 +277,15 @@ class LoRaGPStx(LoRa):
 
 if __name__ == '__main__':
 
-   global lat, lon, tm, date
    logging.info('main thread starting. ' + strftime('%Y-%m-%d %H:%M:%S %Z'))
 
    logging.info('setting LoRa.' )
-      
-     
+   
+   BOARD.setup()
+   
    lora = LoRaGPStx(ReportInterval=args.report, quiet=args.quiet, 
              freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
-             verbose=False)
+             verbose=False, do_calibration=True, calibration_freq=channels[args.channel])
    
    #assert(lora.get_freq() == 915)  # in North America just channel 12
    assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)

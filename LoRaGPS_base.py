@@ -9,7 +9,7 @@ Record tracks if set. (Beware space requirement.)
 # See also examples in  pySX127x.
 
 import argparse
-from time import sleep
+from time import sleep, strftime
 from SX127x.LoRa import *
 from SX127x.board_config import BOARD
 
@@ -79,26 +79,24 @@ assert(args.bw in (125, 250, 500))
 assert(args.Sf in    range(7, 13))
 # North America requires 915MHz, Sf 7-10 == 128 - 1024 chips/symbol == 2**7 - 2**10
 
+# look at this and examples in  pySX127x
+#from SX127x.LoRaArgumentParser import LoRaArgumentParser
+#parser = LoRaArgumentParser("Continous LoRa receiver.")
+
+############# setup for pseudo AIS
 
 MCAST_GROUP = args.mcast_group
 MCAST_PORT  = args.mcast_port
 multicast = MCAST_GROUP is not 'NA'
 TTL = 20
 
-quiet=args.quiet
-
-BOARD.setup()
-
-# look at this and examples in  pySX127x
-#from SX127x.LoRaArgumentParser import LoRaArgumentParser
-#parser = LoRaArgumentParser("Continous LoRa receiver.")
-
-
 # see https://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
 if multicast :
    with open('HOSTNAME_MMSIs.json', 'r') as f:  mmsis = json.load(f)
 
 #bt   = mmsis["BT_ID"] 
+
+############# setup for tracking
 
 if os.path.isfile('TRACK.json') :  
     with open('TRACK.json', 'r') as f:  track = json.load(f)
@@ -121,11 +119,14 @@ else :
 #track = ['BT-1', 'mqtt1']
 #track = ['BT-1']
 
-if not os.path.exists('TRACKS') :  os.makedirs('TRACKS')
+TD='TRACKS_'+strftime("%Y-%m-%d_%H:%M:%S")
+if not os.path.exists(TD) :  os.makedirs(TD)
 
 track_file_handles = {}
 for b in track:
-   track_file_handles.update({b : open('TRACKS/' + b + '.txt', 'w')})
+   track_file_handles.update({b : open(TD + '/' + b + '.txt', 'w')})
+
+###################################################################
 
 class LoRaGPSrx(LoRa):
     '''
@@ -261,34 +262,44 @@ class LoRaGPSrx(LoRa):
             #sys.stdout.write("\r%d %d %d" % (rssi_value, status['rx_ongoing'], status['modem_clear']))
 
 
-lora = LoRaGPSrx(quiet=args.quiet, 
-             freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
-             verbose=False)
+###################################################################
+        
+###################################################################
 
-if not quiet :  print(lora)
-
-assert(lora.get_agc_auto_on() == 1)
-assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
-
-if multicast:
-   sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-   sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
-   print('network (UDP) multicast group to %s:%i' % (MCAST_GROUP, MCAST_PORT))
-
-try:
-    lora.start()
-except KeyboardInterrupt:
-    if not quiet :
-       sys.stdout.flush()
-       print("")
-       sys.stderr.write("Interrupt. ")
-finally:
-    lora.set_mode(MODE.SLEEP)
-    BOARD.teardown()
-    sock.close()
-    for f in track_file_handles.values():
-        f.close()
-    if not quiet :
-        sys.stdout.flush()
-        sys.stderr.write("Base station shut down.\n")
+if __name__ == '__main__':
+    
+    quiet=args.quiet
+    
+    BOARD.setup()
+    
+    lora = LoRaGPSrx(quiet=args.quiet, 
+                 freq=channels[args.channel], bw=args.bw, Cr=args.Cr, Sf=args.Sf, 
+                 verbose=False, do_calibration=True, calibration_freq=channels[args.channel])
+    
+    if not quiet :  print(lora)
+    
+    assert(lora.get_agc_auto_on() == 1)
+    assert(abs(lora.get_freq() - channels[args.channel]) < 0.0001)
+    
+    if multicast:
+       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+       sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, TTL)
+       print('network (UDP) multicast group to %s:%i' % (MCAST_GROUP, MCAST_PORT))
+    
+    try:
+        lora.start()
+    except KeyboardInterrupt:
+        if not quiet :
+           sys.stdout.flush()
+           print("")
+           sys.stderr.write("Interrupt. ")
+    finally:
+        lora.set_mode(MODE.SLEEP)
+        BOARD.teardown()
+        sock.close()
+        for f in track_file_handles.values():
+            f.close()
+        if not quiet :
+            sys.stdout.flush()
+            sys.stderr.write("Base station shut down.\n")
 
