@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-Read track a recording as written by LoRaGPS_base.py and convert it to
+Read track a recording as written by LoRaGPS_base and convert it to
 a gpx file for import into OpenCPN.
 In OpenCPN  'Route & Mark Manager' in top right dropdown menu, 
 then in Tracks tab click Import GPX at bottom left.

@@ -7,7 +7,7 @@ This needs gpsd NOT running (it blocks serial).
    sudo systemctl disable  gpsd
 
 Will need to detach from shell if the sensor system is going out of wifi range:
-   nohup  [python3]  LoRaGPS_sensor.py --quiet=True  report=15.0 &
+   nohup  [python3]  LoRaGPS_sensor --quiet=True  report=15.0 &
 '''
 # see
 #  https://www.gpsinformation.org/dale/nmea.htm for NMEA sentence info.

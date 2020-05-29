@@ -11,20 +11,32 @@ Transmit GPS and other information with LoRa
 
 ##  Summary and Status
 
-The code is in an initial development stage, pre-alpha. More information will
-eventually appear here. For the time being the following content is a rough
-status and "to do" list intended mainly to help me keep track of the 
-different pieces.
+The code is in an alpha stage. It is working but not extensively tested.
 
-The `LoRaGPS_sensor` and `LoRaGPS_base` use `SX127x` from `pySX127x`.
+There are two main parts, a "sensor system" and a "base station".
+The eventual configuration envisages a large number of sensor systems
+(e.g. a large fleet of small boats) while there would be only one or a 
+few base stations. In that configuration the sensor systems would be 
+headless and without a consistent network connection and the base station(s)
+could have monitors or be headless with a network connection.
+There are many applications that might use a similar setup.
 
-- `LoRaGPS_sensor.py` -  transmit message over LoRa (not LoRaWAN).
-                       Status: working (on Raspberry Pi Zero W) but in active
-                        development and re-org.
+In development and for installation both systems will need a monitor or
+network access with ssh.
 
-- `LoRaGPS_base.py` -  receive message over LoRa.
-                     Status: working (on Raspberry Pi 3Bv1.2) but in active
-                        development and re-org.
+The main special requirements of the hardware are that the sensor systems need
+a GPS unit and both the sensor systems and the base station need a LoRa module.
+More details of the hardware used in development are provided in a section below.
+
+The code is Python 3. 
+The main programs, `LoRaGPS_sensor` and `LoRaGPS_base`, use `SX127x` from `pySX127x`.
+Following is a brief decription of files in the  project. 
+
+- `LoRaGPS_sensor` -  transmit message over LoRa (not LoRaWAN).
+                       Status: working alpha version (on Raspberry Pi Zero W).
+
+- `LoRaGPS_base`   -  receive message over LoRa.
+                       Status: working alpha version (on Raspberry Pi 3Bv1.2).
 
 - `lib/AIS.py`    -  Not real AIS! Utilities for converting LoRa broadcast of GPS   
                 information into AIS messages to feed into OpenCPN. 
@@ -35,7 +47,7 @@ The `LoRaGPS_sensor` and `LoRaGPS_base` use `SX127x` from `pySX127x`.
                        on thet IFACE/PORT. Status: working.
 
 - `ais-fake-rx-udp.py` - For testing UDP multicast from ais-fake-tx-udp.py and
-                       LoRaGPS_base.py. Wait for UDP  multicasts and print them .
+                       LoRaGPS_base. Wait for UDP  multicasts and print them.
                        Status: working.
 
 - `track2gpx`          - Utility to convert recorded tracks to gpx format.
@@ -47,26 +59,27 @@ The `LoRaGPS_sensor` and `LoRaGPS_base` use `SX127x` from `pySX127x`.
 
 The unit testing for `AIS.py` is run by   `python3 lib/AIS.py`
  
-The receiver is run on a Raspberry Pi with LoRa hardware by
+Examples of starting the base station are
 ```
-   python3 LoRaGPS_base.py 
+   python3 LoRaGPS_base                # use default settings
+  ./LoRaGPS_base                       #file needs execute permission
+  ./LoRaGPS_base --channel='CH_00_900' # set channel
 ```
+Examples of starting the sensor system are
+```
+  python3 LoRaGPS_sensor                 # use default settings
+  ./LoRaGPS_sensor                       #file needs execute permission
+  ./LoRaGPS_sensor --channel='CH_00_900' # set channel
+```
+The programs could be started in locations other than the program directory (./) but
+beware that the base station will look for some files in the directory where it
+is started. (See more below.)
 
-The transmitter is run on a Raspberry Pi with LoRa and GPS hardware by
+If the sensor system is to move in a way that the shell will disconnect, for example,
+if the session starting  `LoRaGPS_sensor` is by ssh over wifi and the sensor system
+will be move out of wifi range, then try starting with `nohup`, for example
 ```
-  python3 LoRaGPS_sensor.py
-```
-
-or, if the file has execute permission 
-```
-  LoRaGPS_sensor.py 
-```
-
-or, if the sensor system is to move in a way that the shell will disconnect, for example,
-if the session starting  `LoRaGPS_sensor.py` is by ssh over wifi and the sensor system
-will be move out of wifi range, then try starting with `nohup`:
-```
-  nohup  python3  LoRaGPS_sensor.py --quiet=True  --report=15.0 &
+  nohup  ./LoRaGPS_sensor --quiet=True  --report=15.0 &
 ```
 and note the pid to stop it with
 ```
@@ -75,7 +88,7 @@ and note the pid to stop it with
 
 ##  LoRaGPS Software Notes
 
-Both `LoRaGPS_sensor.py` and ` LoRaGPS_base.py`  take command line arguments to set the
+Both `LoRaGPS_sensor` and ` LoRaGPS_base`  take command line arguments to set the
 frequency, bandwidth, coding rate, and spreading factor. Use the `--help` argument for
 more details. There are trade offs among competing objectives: distance, date rate, 
 data reliability, channel congestion, battery life ... . 
@@ -89,8 +102,8 @@ and
 
 ##  Pseudo AIS and OpenCPN Notes
 
-The `LoRaGPS_sensor.py` reads NMEA from the GPS, decodes location messages, and transmits
-the location data, time stamp, and an identifier (hostname) over LoRa. The `LoRaGPS_base.py`
+The `LoRaGPS_sensor` reads NMEA from the GPS, decodes location messages, and transmits
+the location data, time stamp, and an identifier (hostname) over LoRa. The `LoRaGPS_base`
 receives the messages and constructs a pseudo AIS message that is output over the local
 network and is good enough that it can be input into OpenCPN. Do *NOT*
 broadcast this over VHF radio, it is not real AIS and would confuse true AIS receivers.
@@ -100,7 +113,7 @@ the multicast group (default '224.1.1.4') as the network address and the port (d
 Then 'enable' and 'apply'. 
 (Note that the multicast group(s) take the place of a host IP address.)
 
-The group and port can be set as command line arguments to `LoRaGPS_base.py`. 
+The group and port can be set as command line arguments to `LoRaGPS_base`. 
 If `mcast_group` is set to "NA" then AIS output is turned off.
 
 If AIS output is not turned off then a file `HOSTNAME_MMSIs.json` will be read from the
@@ -124,8 +137,9 @@ the  utility `ais-fake-rx-udp.py` is for testing the `ais-fake-tx-udp.py`setup.
 
 ##  Tracking and GPX Notes
 
-When `LoRaGPS_base.py` receives a messages it can record it in files in the subdirectory
-`TRACKS/` with names determined by the hostnames (e.g. `BT-1.txt`). Recording is controlled
+When `LoRaGPS_base` receives a messages it can record it in files in the subdirectory
+`TRACKS_time_stamp/` with names determined by the hostnames (e.g. `BT-1.txt`). 
+The time stamp is the time LoRaGPS_base is started. Recording is controlled
 by the existence and contents of files: `TRACK.json`, `NOT_TRACK.json` and `HOSTNAME_MMSIs.json`.
 If `TRACK.json` exists then its contents should be a list of hostnames of sensor systems
 for which the gps reports should be recorded, for example 
@@ -165,7 +179,6 @@ Below is a description of the setup as initially being tested.
 Many other options are possible but some aspects of the code will need
 adjustment if the hardware is configured differently.
 
-There are two main parts, a "sensor system" and a "base station".
 In addition to the processors in each, the sensor system has a GPS 
 and a LoRa module which transmits information to the base station. 
 The base station has a LoRa module to receive information,
@@ -176,14 +189,6 @@ system might be referred to as the "transmitter" and the base station as
 the "receiver" however, some communication in the opposite direction may
 eventually be done.
 
-The eventual configuration envisages a large number of sensor systems
-(e.g. a large fleet of small boats) while there would be only one of a 
-few base stations. In that configuration the sensor systems would be 
-headless and the base station(s) could have monitors or be headless with
-a network connection.
-
-In development and for installation both systems will need a monitor or
-network access with ssh.
 
 ###  sensor system 
 
@@ -200,7 +205,7 @@ and GND solder points. These are connected to Pi pins as follows.
 |  TX  |   8  | BCM 14   |
 |  RX  |  10  | BCM 15   |
 
-It also has a no name LoRa 915 MHz module with solder points connected to
+It also has a no name RFM95 style LoRa 915 MHz module with solder points connected to
 Raspberry Pi header pins as follows.
 
 |  LoRa  |Pi pin| Pi BCM |
@@ -285,7 +290,7 @@ It should be possible to comfirm that the GPS is attached and working by
 The last line should show a string of NMEA data, read from the GPS 
 device on the serial port.
 
-The `LoRaGPS_sensor.py` code now reads GPS directly though the serial USART.
+The `LoRaGPS_sensor` code now reads GPS directly though the serial USART.
 An early version used gpsd, which may be more robust with different GPS
 devices, and provides some other useful features. It can be a bit trickier 
 to set up, but is very stable once working. The main reason for not using
@@ -340,9 +345,9 @@ The sensor system identifies itself using its hostname. (See notes on AIS and on
 Be sure to set a different hostname for each sensor system, and keep the information for
 setting up AIS and tracking.
 
-Install LoRaGPS_sensor.py and run it
+Install LoRaGPS_sensor and run it
 ```
-  python3 LoRaGPS_sensor.py
+  python3 LoRaGPS_sensor
 ```
 
 
@@ -353,7 +358,7 @@ As of May 2020 the base system is a Raspberry Pi 3B v1.2 running
 Raspian 8 (jessie), but has also been occasionally tested on a Raspberry Pi 
 Zero W running Raspian 10 (Buster Lite).
 
-It has a no name LoRa 915 MHz SX1276 module with a small 915MHz antenna soldered in
+It has a no name RFM95 style LoRa 915 MHz SX1276 module with a small 915MHz antenna soldered in
 place and solder connections with pins as above for the sensor system. 
 
 In places where something other than 915 MHz should be used be sure to
@@ -379,16 +384,16 @@ Depending on the install location put something like
 ```
 in .bashrc
 
-Install LoRaGPS_base.py and run it
+Install LoRaGPS_base and run it
 ```
-  python3 LoRaGPS_base.py
+  python3 LoRaGPS_base
 ```
 
 It might be possible to run OpenCPN on the base station, in which case the AIS feed from
-`LoRaGPS_base.py` can go to localhost with no special iptables configuration as below.
+`LoRaGPS_base` can go to localhost with no special iptables configuration as below.
 (If the base station is a Raspberry Pi, that may involve building OpenCPN rather than 
 just installing it.)
-Otherwise the `LoRaGPS_base.py` will need to broadcast from a network port on the base station
+Otherwise the `LoRaGPS_base` will need to broadcast from a network port on the base station
 so that other computers can use the AIS feed. On a Raspberry Pi that may require setting up
 iptables to allow the python code to open the port. See the 'Install a firewall' section of
 https://www.raspberrypi.org/documentation/configuration/security.md. 
@@ -397,7 +402,7 @@ or publicly accessible.
 ```
 sudo apt install ufw
 sudo ufw allow 22/tcp      # for ssh if running headless
-sudo ufw allow 65433/udp   # The default port used by LoRaGPS_base.py
+sudo ufw allow 65433/udp   # The default port used by LoRaGPS_base
 sudo ufw status
 sudo ufw enable             # legacy command may not be needed?
 sudo systemctl start ufw    # starts the service 
